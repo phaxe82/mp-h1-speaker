@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OJAS-2 Crossover</title>
+<style>
+  :root {
+    --bg: #EAE6DC;
+    --panel: #F5F2EA;
+    --panel-line: #DCD6C8;
+    --ink: #201C16;
+    --ink-muted: #6B6455;
+    --ink-faint: #948C7A;
+    --rule: rgba(32,28,22,0.16);
+    --rule-soft: rgba(32,28,22,0.09);
+    --copper: #A85A26;
+    --slate: #3E5468;
+    --wire: var(--ink);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15171A;
+      --panel: #1D2023;
+      --panel-line: #2C3034;
+      --ink: #ECE7DA;
+      --ink-muted: #9B9587;
+      --ink-faint: #6C6759;
+      --rule: rgba(236,231,218,0.16);
+      --rule-soft: rgba(236,231,218,0.08);
+      --copper: #D68A4E;
+      --slate: #82A0B8;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171A;
+    --panel: #1D2023;
+    --panel-line: #2C3034;
+    --ink: #ECE7DA;
+    --ink-muted: #9B9587;
+    --ink-faint: #6C6759;
+    --rule: rgba(236,231,218,0.16);
+    --rule-soft: rgba(236,231,218,0.08);
+    --copper: #D68A4E;
+    --slate: #82A0B8;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    padding: 56px 24px 80px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .sheet {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  /* ---- title block ---- */
+  .titleblock {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 18px;
+  }
+  .titleblock .eyebrow {
+    font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--copper);
+    margin: 0 0 10px;
+  }
+  .titleblock h1 {
+    font: 600 32px/1.15 "Iowan Old Style", Charter, Georgia, serif;
+    margin: 0 0 6px;
+    text-wrap: balance;
+  }
+  .titleblock .sub {
+    font: 400 15px/1.4 -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink-muted);
+    margin: 0;
+    max-width: 46ch;
+  }
+  .meta {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 3px 14px;
+    font: 500 11.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--ink-muted);
+    white-space: nowrap;
+    text-align: right;
+  }
+  .meta dt { grid-column: 1; color: var(--ink-faint); text-align: left; }
+  .meta dd { grid-column: 2; margin: 0; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  /* ---- schematic panel ---- */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 3px;
+    padding: 8px;
+  }
+  figure { margin: 0; }
+  .diagram-scroll { overflow-x: auto; }
+  svg.schematic { display: block; width: 100%; height: auto; min-width: 640px; }
+  figcaption {
+    padding: 12px 14px 4px;
+    font: 400 12.5px/1.5 -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink-muted);
+    border-top: 1px solid var(--rule-soft);
+    margin-top: 8px;
+  }
+  figcaption b { color: var(--ink); font-weight: 600; }
+
+  /* schematic-capture panel: fixed white/black regardless of host theme,
+     matching a passive-crossover simulator export */
+  .schematic-panel {
+    background: #ffffff;
+    border: 1px solid #d9d9d9;
+  }
+  .schematic-panel svg.schematic { background: #ffffff; }
+  .schematic-panel figcaption {
+    color: #4a4a4a;
+    border-top: 1px solid #e6e6e6;
+  }
+  .schematic-panel figcaption b { color: #111111; }
+
+  /* ---- values table ---- */
+  h2 {
+    font: 600 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 12px;
+  }
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  thead th {
+    text-align: left;
+    font: 600 11px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding: 0 12px 8px 0;
+    border-bottom: 1px solid var(--ink);
+  }
+  tbody td {
+    padding: 10px 12px 10px 0;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+  }
+  tbody tr:last-child td { border-bottom: 1px solid var(--rule); }
+  td.ref {
+    font: 600 13.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--copper);
+    width: 44px;
+  }
+  td.val {
+    font: 600 13.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    width: 90px;
+  }
+  td.role { color: var(--ink-muted); font-size: 13px; }
+  .part-spec { display: block; color: var(--ink-faint); font-size: 12px; margin-top: 2px; }
+
+  .result-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px 36px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--rule);
+  }
+  .result {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .result .k {
+    font: 500 10.5px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .result .v {
+    font: 600 18px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  .result .v small { font-size: 12px; font-weight: 500; color: var(--ink-muted); }
+
+  /* ---- notes ---- */
+  .notes {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .note {
+    display: grid;
+    grid-template-columns: 108px 1fr;
+    gap: 4px 16px;
+  }
+  .note .label {
+    font: 600 11px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--slate);
+    padding-top: 2px;
+  }
+  .note p {
+    margin: 0;
+    font: 400 14.5px/1.55 -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink);
+  }
+  .note p em { color: var(--ink-muted); font-style: normal; }
+
+  footer {
+    font: 400 11.5px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--ink-faint);
+    border-top: 1px solid var(--rule-soft);
+    padding-top: 14px;
+  }
+
+  @media (max-width: 560px) {
+    .titleblock { flex-direction: column; align-items: flex-start; }
+    .meta { text-align: left; grid-template-columns: auto auto; }
+    .note { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+
+  <div class="titleblock">
+    <div>
+      <p class="eyebrow">Passive crossover network</p>
+      <h1>OJAS-Style 2-Way</h1>
+      <p class="sub">Compression-driver high-pass and L-pad, per amplifier channel. Woofer runs full-range, direct.</p>
+    </div>
+    <dl class="meta">
+      <dt>Dwg</dt><dd>XO&#8209;01</dd>
+      <dt>Sheet</dt><dd>1 of 1</dd>
+      <dt>Qty</dt><dd>&times;2, L + R identical</dd>
+      <dt>Load</dt><dd>8&nbsp;&#937; nominal</dd>
+    </dl>
+  </div>
+
+  <div class="panel schematic-panel">
+    <figure>
+      <div class="diagram-scroll">
+        <svg class="schematic" viewBox="0 0 1400 700" role="img"
+             aria-label="Passive-crossover-simulator style schematic. A power amp's positive terminal feeds a vertical bus splitting into two branches; the negative terminal and every other return point connects to its own ground symbol rather than a drawn negative rail. The tweeter branch S1, the compression driver, runs through series capacitor C1 at 12 microfarads, a node where inductor L1 at 1.5 millihenries shunts to ground, a series resistor R1 at 6.2 ohms, then the driver, with resistor R2 at 2.7 ohms shunted to ground at that same node to form an L-pad. The woofer branch S2 runs direct from the bus to the driver with no components.">
+
+          <defs>
+            <g id="gnd">
+              <path d="M -16 0 L 16 0 L 0 22 Z" fill="none" stroke="#111111" stroke-width="1.75"/>
+            </g>
+          </defs>
+
+          <!-- Power amp -->
+          <rect x="50" y="90" width="190" height="180" fill="#ffffff" stroke="#111111" stroke-width="1.75"/>
+          <text x="145" y="178" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="21" font-weight="600" fill="#111111">Power</text>
+          <text x="145" y="204" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="21" font-weight="600" fill="#111111">Amp</text>
+          <text x="145" y="296" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="12.5" fill="#666666">single channel, one shared EQ curve</text>
+          <text x="145" y="313" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="12.5" fill="#666666">for both drivers &#8212; no per-driver DSP</text>
+
+          <!-- + terminal -->
+          <line x1="240" y1="140" x2="280" y2="140" stroke="#111111" stroke-width="1.75"/>
+          <text x="258" y="124" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="700" fill="#C4291E">+</text>
+
+          <!-- &minus; terminal -->
+          <line x1="240" y1="230" x2="280" y2="230" stroke="#111111" stroke-width="1.75"/>
+          <text x="258" y="214" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="700" fill="#111111">&#8722;</text>
+          <line x1="280" y1="230" x2="280" y2="290" stroke="#111111" stroke-width="1.75"/>
+          <use href="#gnd" x="280" y="290"/>
+
+          <!-- + bus: right to tweeter row, down to woofer row -->
+          <line x1="280" y1="140" x2="340" y2="140" stroke="#111111" stroke-width="1.75"/>
+          <line x1="340" y1="140" x2="340" y2="560" stroke="#111111" stroke-width="1.75"/>
+          <circle cx="340" cy="140" r="3.5" fill="#111111"/>
+          <circle cx="340" cy="560" r="3.5" fill="#111111"/>
+
+          <!-- ===================== S1 — tweeter / compression driver ===================== -->
+          <line x1="340" y1="140" x2="460" y2="140" stroke="#111111" stroke-width="1.75"/>
+
+          <!-- C1 -->
+          <line x1="460" y1="122" x2="460" y2="158" stroke="#111111" stroke-width="2.25"/>
+          <line x1="476" y1="122" x2="476" y2="158" stroke="#111111" stroke-width="2.25"/>
+          <line x1="476" y1="140" x2="560" y2="140" stroke="#111111" stroke-width="1.75"/>
+          <text x="468" y="104" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="600" fill="#111111">C1</text>
+          <text x="468" y="120" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#333333">12 &#181;F</text>
+
+          <!-- node A -->
+          <circle cx="560" cy="140" r="3.5" fill="#111111"/>
+
+          <!-- L1 shunt -->
+          <line x1="560" y1="140" x2="560" y2="220" stroke="#111111" stroke-width="1.75"/>
+          <path d="M 560 220 a 9 9 0 0 1 0 18 a 9 9 0 0 1 0 18 a 9 9 0 0 1 0 18"
+                fill="none" stroke="#111111" stroke-width="1.75"/>
+          <line x1="560" y1="274" x2="560" y2="330" stroke="#111111" stroke-width="1.75"/>
+          <use href="#gnd" x="560" y="330"/>
+          <text x="542" y="250" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="600" fill="#111111">L1</text>
+          <text x="542" y="266" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#333333">1.5 mH</text>
+
+          <!-- R1 series -->
+          <line x1="560" y1="140" x2="680" y2="140" stroke="#111111" stroke-width="1.75"/>
+          <rect x="680" y="132" width="42" height="16" fill="#ffffff" stroke="#111111" stroke-width="1.75"/>
+          <line x1="722" y1="140" x2="830" y2="140" stroke="#111111" stroke-width="1.75"/>
+          <text x="701" y="117" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="600" fill="#111111">R1</text>
+          <text x="701" y="104" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#333333">6.2 &#937;</text>
+
+          <!-- node B -->
+          <circle cx="830" cy="140" r="3.5" fill="#111111"/>
+
+          <!-- R2 shunt (L-pad, sits directly across the driver terminals) -->
+          <line x1="830" y1="140" x2="830" y2="220" stroke="#111111" stroke-width="1.75"/>
+          <rect x="822" y="220" width="16" height="44" fill="#ffffff" stroke="#111111" stroke-width="1.75"/>
+          <line x1="830" y1="264" x2="830" y2="330" stroke="#111111" stroke-width="1.75"/>
+          <use href="#gnd" x="830" y="330"/>
+          <text x="848" y="248" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="600" fill="#111111">R2</text>
+          <text x="848" y="264" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#333333">2.7 &#937;</text>
+
+          <!-- S1 driver icon -->
+          <line x1="830" y1="140" x2="930" y2="140" stroke="#111111" stroke-width="1.75"/>
+          <path d="M 930 120 L 930 160 L 1010 185 L 1010 95 Z" fill="#ffffff" stroke="#111111" stroke-width="1.75"/>
+          <text x="906" y="129" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="17" font-weight="700" fill="#C4291E">+</text>
+          <line x1="930" y1="160" x2="915" y2="160" stroke="#111111" stroke-width="1.75"/>
+          <line x1="915" y1="160" x2="915" y2="210" stroke="#111111" stroke-width="1.75"/>
+          <use href="#gnd" x="915" y="210"/>
+          <text x="906" y="171" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="17" font-weight="700" fill="#111111">&#8722;</text>
+
+          <text x="1030" y="123" font-family="Arial,Helvetica,sans-serif" font-size="12.5" font-weight="600" fill="#888888" letter-spacing="0.06em">S1</text>
+          <text x="1030" y="146" font-family="Arial,Helvetica,sans-serif" font-size="18" font-weight="600" fill="#111111">Compression driver</text>
+          <text x="1030" y="166" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#555555">SB Audience ROSSO&#8209;65CD&#8209;T &#183; 8 &#937;</text>
+          <text x="1030" y="184" font-family="Arial,Helvetica,sans-serif" font-size="12.5" font-style="italic" fill="#888888">wired inverted &#8212; confirm in REW</text>
+
+          <!-- ===================== S2 — woofer ===================== -->
+          <text x="620" y="542" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="12.5" font-style="italic" fill="#888888">direct &#8212; no passive filter</text>
+          <line x1="340" y1="560" x2="930" y2="560" stroke="#111111" stroke-width="1.75"/>
+
+          <path d="M 930 540 L 930 580 L 1010 605 L 1010 515 Z" fill="#ffffff" stroke="#111111" stroke-width="1.75"/>
+          <text x="906" y="549" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="17" font-weight="700" fill="#C4291E">+</text>
+          <line x1="930" y1="580" x2="915" y2="580" stroke="#111111" stroke-width="1.75"/>
+          <line x1="915" y1="580" x2="915" y2="630" stroke="#111111" stroke-width="1.75"/>
+          <use href="#gnd" x="915" y="630"/>
+          <text x="906" y="591" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="17" font-weight="700" fill="#111111">&#8722;</text>
+
+          <text x="1030" y="543" font-family="Arial,Helvetica,sans-serif" font-size="12.5" font-weight="600" fill="#888888" letter-spacing="0.06em">S2</text>
+          <text x="1030" y="566" font-family="Arial,Helvetica,sans-serif" font-size="18" font-weight="600" fill="#111111">Woofer</text>
+          <text x="1030" y="586" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#555555">Peerless FSL&#8209;1225R02&#8209;08 &#183; 8 &#937;</text>
+
+        </svg>
+      </div>
+      <figcaption>
+        One amp channel per box, one shared DSP EQ curve &#8212; no independent per-driver control. <b>S2, the
+        woofer,</b> connects direct with no passive parts. <b>S1, the compression driver,</b> gets a 2nd&#8209;order
+        electrical high-pass (C1 series, L1 shunted to ground) followed by an L&#8209;pad (R1 series, R2 shunted to
+        ground right at the driver's terminals) that pulls its 108&nbsp;dB sensitivity down to match the woofer.
+        This passive network, not the DSP, is what actually splits the signal between the two drivers &#8212;
+        see the upstream&#8209;DSP note below. Each ground symbol is a return to the amp's &#8722; terminal &#8212;
+        drawn locally rather than as one long rail, in the convention of passive-crossover simulator tools
+        (e.g. XSim).
+      </figcaption>
+    </figure>
+  </div>
+
+  <div class="panel schematic-panel" style="padding: 8px;">
+    <h2 style="padding: 16px 16px 0;">Physical wiring &amp; board layout</h2>
+    <figure>
+      <div class="diagram-scroll">
+        <svg class="schematic" viewBox="0 0 1680 900" role="img"
+             aria-label="Pictorial wiring diagram. Ring terminals labelled plus and minus each send two wires: one pair goes straight to the woofer with no components in between, the other pair goes to a crossover board. On the board, the positive lead enters capacitor C1, continues to a junction where inductor L1 drops to a ground bus, continues through resistor R1 to a second junction where resistor R2 drops to the same ground bus, then exits to the compression driver's positive terminal. The ground bus also runs out to the compression driver's negative terminal and back to the terminal cup's negative ring.">
+
+          <!-- ===== Terminals ===== -->
+          <circle cx="150" cy="260" r="18" fill="none" stroke="#9a9a9a" stroke-width="16"/>
+          <circle cx="164" cy="246" r="6" fill="#C4291E"/>
+          <text x="196" y="273" font-family="Arial,Helvetica,sans-serif" font-size="32" font-weight="700" fill="#C4291E">+</text>
+
+          <circle cx="150" cy="380" r="18" fill="none" stroke="#9a9a9a" stroke-width="16"/>
+          <circle cx="164" cy="366" r="6" fill="#111111"/>
+          <text x="196" y="393" font-family="Arial,Helvetica,sans-serif" font-size="32" font-weight="700" fill="#111111">&#8722;</text>
+
+          <text x="150" y="432" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="600" letter-spacing="0.06em" fill="#333333">TERMINALS</text>
+
+          <!-- ===== Woofer, direct ===== -->
+          <path d="M590,110 L660,110 L700,45 L550,45 Z" fill="#ffffff" stroke="#111111" stroke-width="1.75"/>
+          <rect x="580" y="110" width="90" height="30" fill="#111111"/>
+          <text x="625" y="28" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="17" font-weight="700" fill="#111111">WOOFER</text>
+
+          <line x1="600" y1="140" x2="600" y2="168" stroke="#111111" stroke-width="1.75"/>
+          <circle cx="600" cy="168" r="4.5" fill="#111111"/>
+          <text x="583" y="152" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="700" fill="#111111">&#8722;</text>
+
+          <line x1="650" y1="140" x2="650" y2="168" stroke="#111111" stroke-width="1.75"/>
+          <circle cx="650" cy="168" r="4.5" fill="#C4291E"/>
+          <text x="667" y="152" text-anchor="start" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="700" fill="#C4291E">+</text>
+
+          <path d="M172,246 C 340,150 520,150 650,168" fill="none" stroke="#C4291E" stroke-width="3"/>
+          <path d="M172,392 C 340,290 500,205 600,168" fill="none" stroke="#2E6FB8" stroke-width="3"/>
+          <text x="330" y="128" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="12.5" font-style="italic" fill="#777777">direct &#8212; no passive filter</text>
+
+          <!-- ===== Crossover board ===== -->
+          <rect x="420" y="420" width="880" height="430" rx="8" fill="#DAD7CC" stroke="#111111" stroke-width="2"/>
+          <text x="450" y="452" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="700" letter-spacing="0.08em" fill="#66625A">CROSSOVER BOARD &#8212; SCREWED TO CABINET FLOOR</text>
+
+          <!-- input / output stubs -->
+          <path d="M172,252 C 300,310 380,460 478,580" fill="none" stroke="#C4291E" stroke-width="3"/>
+          <path d="M172,388 C 300,560 380,700 448,798" fill="none" stroke="#2E6FB8" stroke-width="3"/>
+
+          <!-- C1 -->
+          <rect x="480" y="540" width="70" height="80" fill="#1c1c1c" stroke="#111111" stroke-width="1.5"/>
+          <text x="515" y="576" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="700" fill="#ffffff">C1</text>
+          <text x="515" y="595" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#dddddd">12 &#181;F</text>
+          <line x1="550" y1="580" x2="600" y2="580" stroke="#C4291E" stroke-width="3"/>
+
+          <!-- node A -->
+          <circle cx="600" cy="580" r="4.5" fill="#111111"/>
+          <line x1="600" y1="580" x2="600" y2="655" stroke="#C4291E" stroke-width="3"/>
+
+          <!-- L1 -->
+          <circle cx="600" cy="726" r="52" fill="none" stroke="#E0932E" stroke-width="40"/>
+          <text x="600" y="722" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="12.5" font-weight="700" fill="#2a2a2a">L1</text>
+          <text x="600" y="737" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#2a2a2a">1.5 mH</text>
+          <line x1="600" y1="798" x2="600" y2="800" stroke="#2E6FB8" stroke-width="3"/>
+
+          <!-- R1 -->
+          <line x1="600" y1="580" x2="680" y2="580" stroke="#C4291E" stroke-width="3"/>
+          <rect x="680" y="545" width="50" height="70" fill="#2E8B4E" stroke="#111111" stroke-width="1.5"/>
+          <text x="705" y="567" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="700" fill="#ffffff" transform="rotate(-90 705 567)">R1</text>
+          <text x="705" y="600" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#eaf3ec" transform="rotate(-90 705 600)">6.2 &#937;</text>
+          <line x1="730" y1="580" x2="770" y2="580" stroke="#C4291E" stroke-width="3"/>
+
+          <!-- node B -->
+          <circle cx="770" cy="580" r="4.5" fill="#111111"/>
+          <line x1="770" y1="580" x2="770" y2="615" stroke="#C4291E" stroke-width="3"/>
+
+          <!-- R2 -->
+          <rect x="750" y="615" width="40" height="140" fill="#2E8B4E" stroke="#111111" stroke-width="1.5"/>
+          <text x="770" y="670" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="700" fill="#ffffff" transform="rotate(-90 770 670)">R2</text>
+          <text x="770" y="703" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="11" fill="#eaf3ec" transform="rotate(-90 770 703)">2.7 &#937;</text>
+          <line x1="770" y1="755" x2="770" y2="800" stroke="#2E6FB8" stroke-width="3"/>
+
+          <!-- board output to CD driver -->
+          <line x1="770" y1="580" x2="1270" y2="580" stroke="#C4291E" stroke-width="3"/>
+
+          <!-- ground bus -->
+          <line x1="600" y1="800" x2="770" y2="800" stroke="#2E6FB8" stroke-width="3"/>
+          <line x1="600" y1="800" x2="450" y2="800" stroke="#2E6FB8" stroke-width="3"/>
+          <line x1="770" y1="800" x2="1100" y2="800" stroke="#2E6FB8" stroke-width="3"/>
+          <text x="500" y="818" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="11.5" font-style="italic" fill="#66625A">ground bus, common return</text>
+
+          <path d="M1100,800 C 1210,765 1280,690 1330,634" fill="none" stroke="#2E6FB8" stroke-width="3"/>
+
+          <!-- ===== Compression driver ===== -->
+          <rect x="1330" y="560" width="30" height="90" fill="#111111"/>
+          <path d="M1360,560 L1360,650 L1430,690 L1430,520 Z" fill="#ffffff" stroke="#111111" stroke-width="1.75"/>
+
+          <line x1="1270" y1="580" x2="1330" y2="580" stroke="#C4291E" stroke-width="3"/>
+          <circle cx="1330" cy="580" r="4.5" fill="#C4291E"/>
+          <text x="1312" y="576" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="700" fill="#C4291E">+</text>
+
+          <circle cx="1330" cy="630" r="4.5" fill="#111111"/>
+          <text x="1312" y="634" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="700" fill="#111111">&#8722;</text>
+
+          <text x="1445" y="580" font-family="Arial,Helvetica,sans-serif" font-size="17" font-weight="700" fill="#111111">Compression driver</text>
+          <text x="1445" y="600" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#555555">SB Audience ROSSO&#8209;65CD&#8209;T</text>
+          <text x="1445" y="618" font-family="Arial,Helvetica,sans-serif" font-size="12" font-style="italic" fill="#888888">wired inverted &#8212; see schematic</text>
+
+        </svg>
+      </div>
+      <figcaption>
+        Same circuit as the schematic above, drawn as it's actually run: from the terminal cup, the woofer's two
+        leads go straight up with nothing in between, while a second pair feeds the crossover board &#8212; screwed
+        to the cabinet floor per the build guide. On the board the signal passes C1, node A (where L1 drops to the
+        ground bus), R1, and node B (where R2 drops to the same ground bus) before leaving for the compression
+        driver. Red traces carry the hot signal; blue traces are all one common return, bussed together rather
+        than run as separate wires back to the terminal.
+      </figcaption>
+    </figure>
+  </div>
+
+  <div class="panel" style="padding: 22px 22px 8px;">
+    <h2>Parts &amp; values</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Ref</th><th>Value</th><th>Part</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="ref">C1</td>
+            <td class="val">12 &#181;F</td>
+            <td class="role">MKP film capacitor, &#8805;250 V &#8212; series element of the CD high-pass.
+              <span class="part-spec">Jantzen Cross-Cap / Dayton PMPC, or 10 &#181;F + 2.2 &#181;F in parallel</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="ref">L1</td>
+            <td class="val">1.5 mH</td>
+            <td class="role">Air-core inductor &#8212; shunt element of the CD high-pass, node A to &#8722; bus.
+              <span class="part-spec">&#8805;0.7&#8211;0.9 mm (20 AWG) wire, DCR &#8804; 0.6 &#937;</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="ref">R1</td>
+            <td class="val">6.2 &#937;</td>
+            <td class="role">Wirewound, 10 W &#8212; L&#8209;pad series leg, node A to node B.
+              <span class="part-spec">5.6 &#937; / 6.8 &#937; alternates for &#177;1.5 dB trim</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="ref">R2</td>
+            <td class="val">2.7 &#937;</td>
+            <td class="role">Wirewound, 10 W &#8212; L&#8209;pad shunt leg, directly across the CD driver terminals.
+              <span class="part-spec">3.3 &#937; / 2.2 &#937; alternates for &#177;1.5 dB trim</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="result-strip">
+      <div class="result"><span class="k">Corner, fc</span><span class="v">1.19 <small>kHz</small></span></div>
+      <div class="result"><span class="k">Q</span><span class="v">0.72</span></div>
+      <div class="result"><span class="k">Pad</span><span class="v">&#8722;12 <small>dB, 108&#8594;96.2</small></span></div>
+      <div class="result"><span class="k">Z min</span><span class="v">4.4 <small>&#937; near fc</small></span></div>
+    </div>
+  </div>
+
+  <div class="panel" style="padding: 22px;">
+    <h2>Build &amp; tuning notes</h2>
+    <div class="notes">
+      <div class="note">
+        <div class="label">Polarity</div>
+        <p>Wire the compression driver <em>inverted</em> as a starting point &#8212; normal for a 2nd&#8209;order
+          electrical high-pass at this driver spacing. Sweep both polarities on-axis at 1 m and keep whichever gives
+          a smooth sum (not a suckout) through 1&#8211;1.5 kHz in REW.</p>
+      </div>
+      <div class="note">
+        <div class="label">Level trim</div>
+        <p>If the horn reads hot or quiet against the woofer, swap R1 between 5.6&#8211;6.8 &#937; and R2 between
+          2.2&#8211;3.3 &#937; for roughly &#177;1.5 dB of adjustment without touching C1 or L1.</p>
+      </div>
+      <div class="note">
+        <div class="label">Upstream DSP</div>
+        <p>Both drivers share one amp channel, so there's <em>one</em> DSP EQ curve per box, not one per driver
+          &#8212; not shown here since it's active, not passive. A 40 Hz high-pass (24 dB/oct) and a low-shelf
+          below 100 Hz sit in that shared curve. That's safe to apply globally: below 1 kHz only the woofer is
+          radiating anyway, so those filters have nothing to act on in the compression driver's output. The
+          same logic applies to any top-octave shelf &#8212; above ~5 kHz only the horn is playing.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel schematic-panel" style="padding: 8px;">
+    <h2 style="padding: 16px 16px 0;">Board layout &#8212; top view</h2>
+    <figure>
+      <div class="diagram-scroll">
+        <svg class="schematic" viewBox="0 0 1120 740" role="img"
+             aria-label="Top view of the crossover board. A rectangular ply board holds, left to right: the input, capacitor C1, then node A where the shunt coil L1 drops to a ground bus and the series resistor R1 continues to node B, where the shunt resistor R2 drops to the ground bus and the output goes to the compression driver. The woofer is wired straight from the input with no board parts. The two resistors are raised off the board. Four corner holes mount the board to the cabinet floor.">
+
+          <!-- board -->
+          <rect x="70" y="50" width="980" height="640" rx="10" fill="#E4E0D4" stroke="#111111" stroke-width="2"/>
+          <text x="92" y="82" font-family="Arial,Helvetica,sans-serif" font-size="20" font-weight="700" letter-spacing="0.04em" fill="#66625A">CROSSOVER BOARD &#8226; &#8776;200 &#215; 130 mm &#8226; 6 mm ply / MDF &#8226; screwed to cabinet floor</text>
+
+          <!-- mounting holes -->
+          <circle cx="120" cy="120" r="12" fill="none" stroke="#9a9a9a" stroke-width="8"/>
+          <circle cx="1000" cy="120" r="12" fill="none" stroke="#9a9a9a" stroke-width="8"/>
+          <circle cx="120" cy="620" r="12" fill="none" stroke="#9a9a9a" stroke-width="8"/>
+          <circle cx="1000" cy="620" r="12" fill="none" stroke="#9a9a9a" stroke-width="8"/>
+
+          <!-- ground bus -->
+          <line x1="150" y1="640" x2="960" y2="640" stroke="#2E6FB8" stroke-width="3"/>
+          <text x="200" y="672" font-family="Arial,Helvetica,sans-serif" font-size="20" font-style="italic" fill="#66625A">ground bus &#8212; common return (IN&#8722;, L1, R2, CD&#8722;)</text>
+
+          <!-- IN -->
+          <circle cx="150" cy="200" r="5" fill="#C4291E"/>
+          <text x="120" y="184" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="22" font-weight="700" fill="#C4291E">IN +</text>
+          <circle cx="150" cy="640" r="5" fill="#2E6FB8"/>
+          <text x="120" y="628" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="22" font-weight="700" fill="#2E6FB8">IN &#8722;</text>
+
+          <!-- C1 -->
+          <line x1="150" y1="200" x2="200" y2="200" stroke="#C4291E" stroke-width="3"/>
+          <rect x="200" y="160" width="220" height="80" rx="8" fill="#1c1c1c" stroke="#111111" stroke-width="1.5"/>
+          <text x="310" y="196" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="22" font-weight="700" fill="#ffffff">C1</text>
+          <text x="310" y="220" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="17" fill="#dddddd">12 &#181;F</text>
+
+          <!-- node A -->
+          <line x1="420" y1="200" x2="500" y2="200" stroke="#C4291E" stroke-width="3"/>
+          <circle cx="500" cy="200" r="6" fill="#111111"/>
+          <text x="500" y="150" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="19" font-weight="700" fill="#888888">A</text>
+
+          <!-- L1 coil (shunt from A to ground) -->
+          <line x1="500" y1="200" x2="500" y2="330" stroke="#C4291E" stroke-width="3"/>
+          <circle cx="500" cy="430" r="92" fill="none" stroke="#E0932E" stroke-width="34"/>
+          <text x="500" y="426" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="20" font-weight="700" fill="#2a2a2a">L1</text>
+          <text x="500" y="450" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="16" fill="#2a2a2a">1.5 mH</text>
+          <line x1="500" y1="522" x2="500" y2="640" stroke="#2E6FB8" stroke-width="3"/>
+
+          <!-- R1 series A -> B (raised) -->
+          <rect x="596" y="176" width="248" height="64" rx="4" fill="#d9d6cc" stroke="#b7b2a4" stroke-width="1"/>
+          <rect x="590" y="162" width="248" height="64" rx="4" fill="#ffffff" stroke="#111111" stroke-width="1.75"/>
+          <line x1="500" y1="200" x2="590" y2="194" stroke="#C4291E" stroke-width="3"/>
+          <text x="714" y="200" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="21" font-weight="700" fill="#111111">R1 &#8226; 6.8 &#937; 10 W</text>
+          <text x="714" y="140" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="18" font-style="italic" fill="#888888">series &#8212; raise 6&#8211;8 mm off board (runs hot)</text>
+
+          <!-- node B -->
+          <line x1="838" y1="194" x2="924" y2="194" stroke="#C4291E" stroke-width="3"/>
+          <circle cx="924" cy="194" r="6" fill="#111111"/>
+          <text x="924" y="150" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="19" font-weight="700" fill="#888888">B</text>
+
+          <!-- R2 shunt B -> ground (raised, vertical) -->
+          <rect x="900" y="266" width="60" height="180" rx="4" fill="#d9d6cc" stroke="#b7b2a4" stroke-width="1"/>
+          <rect x="894" y="260" width="60" height="180" rx="4" fill="#ffffff" stroke="#111111" stroke-width="1.75"/>
+          <line x1="924" y1="194" x2="924" y2="260" stroke="#C4291E" stroke-width="3"/>
+          <text x="924" y="346" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="20" font-weight="700" fill="#111111" transform="rotate(-90 924 346)">R2 &#8226; 2.7 &#937; 5 W</text>
+          <line x1="924" y1="440" x2="924" y2="640" stroke="#2E6FB8" stroke-width="3"/>
+
+          <!-- CD outputs -->
+          <line x1="924" y1="194" x2="1010" y2="194" stroke="#C4291E" stroke-width="3"/>
+          <circle cx="1010" cy="194" r="5" fill="#C4291E"/>
+          <text x="1040" y="200" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="22" font-weight="700" fill="#C4291E">CD +</text>
+          <circle cx="1010" cy="640" r="5" fill="#2E6FB8"/>
+          <text x="1040" y="628" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="22" font-weight="700" fill="#2E6FB8">CD &#8722;</text>
+
+          <!-- coil callout -->
+          <text x="300" y="560" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="18" font-style="italic" fill="#888888">keep coil &#8805;50 mm from steel /</text>
+          <text x="300" y="582" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="18" font-style="italic" fill="#888888">woofer magnet; put board in a rear corner</text>
+
+          <!-- woofer note -->
+          <text x="714" y="600" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="18" font-style="italic" fill="#888888">Woofer: IN&#8201;+/&#8201;&#8722; straight to the driver &#8212; no board parts</text>
+        </svg>
+      </div>
+      <figcaption>
+        Same circuit as the schematic, laid out as a board you build on the bench and drop in. Red is the hot signal,
+        blue is the common return bussed along the bottom. <b>Node A</b> = C1 out + L1 + R1; <b>node B</b> = R1 + R2 +
+        CD&#8201;+. The <b>two resistors sit raised off the board and away from C1</b> &#8212; they run hot and the film
+        cap is only rated 85&#8201;&#176;C.
+      </figcaption>
+    </figure>
+  </div>
+
+  <div class="panel" style="padding: 22px;">
+    <h2>Board assembly</h2>
+    <div class="notes">
+      <div class="note">
+        <div class="label">Board</div>
+        <p>A ~200 &#215; 130 mm offcut of 6 mm ply or MDF, one per speaker. Drill hole pairs beside each part for cable
+          ties, plus four corner holes to screw it to the cabinet floor &#8212; clear of the port airflow and not
+          directly behind the woofer magnet.</p>
+      </div>
+      <div class="note">
+        <div class="label">Resistors</div>
+        <p><em>Raise R1 and R2 ~6&#8211;8 mm off the board on their own legs</em> and keep them away from C1. They're the
+          only parts that get hot; the ceramic body shouldn't touch wood and the cap shouldn't cook. Give them air.</p>
+      </div>
+      <div class="note">
+        <div class="label">Cap &amp; coil</div>
+        <p>Lie both flat, two cable ties each through the drilled holes (or neutral-cure silicone / hot glue on the cap
+          &#8212; never on the resistors). Keep the air coil &#8805;50 mm from any steel bracket or the woofer magnet, and
+          don't line its axis up with the woofer.</p>
+      </div>
+      <div class="note">
+        <div class="label">Wiring</div>
+        <p>Point-to-point using the component legs as the main conductors &#8212; they're already ~1 mm. Add short 18 AWG
+          hookup wire for the runs to the terminal cup and drivers; twist junctions tight before soldering and sleeve the
+          ground-bus joints.</p>
+      </div>
+      <div class="note">
+        <div class="label">Build first</div>
+        <p>Solder the board, clip it to the amp on the bench, then sweep in REW to set driver polarity and confirm the
+          crossover before mounting in the box. A solder joint is far easier to fix on the bench than through a driver
+          cut-out.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>Per speaker, from the amp terminal cup &#183; both drivers share one amplifier channel &#183; values per speaker_docs/design-notes.md &amp; build-guide.md</footer>
+
+</div>
+
+</body>
+</html>

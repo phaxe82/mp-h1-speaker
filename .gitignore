@@ -1,0 +1,14 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Working / scratch (Claude dev dir, previews)
+claude/
+scratch_preview/
+
+# Third-party reference image (not ours to redistribute)
+speaker_docs/inspo pic.png
