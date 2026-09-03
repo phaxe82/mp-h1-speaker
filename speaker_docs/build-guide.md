@@ -120,6 +120,20 @@ Amp ──► BACK posts ──┬──► Woofer            (direct, no parts)
   spacings); confirm by measuring the crossover null/sum in REW. Mark the top
   posts' +/− clearly so you can flip deliberately.
 
+> **Field note (Sep 2026): the shared negative rail is a single point of
+> failure — keep it reachable through the woofer cutout.** After repainting a
+> baffle, both drivers went dead. The horn's own terminal measured fine, but
+> nothing reached it: a spade had lifted off the **negative-rail Wago**. Because
+> the woofer taps the back posts directly *and* horn−/woofer−/amp− all land on
+> that one Wago, a single loose negative kills the woofer **and** the horn at
+> once — the symptom looks like a dead amp input, not a crossover fault. Fix was
+> a 5-minute re-terminate (confirm back −post → woofer − and back −post → horn −
+> both ≈ 0 Ω). **Lesson: the woofer is the service hatch — site the ± Wagos
+> within reach of the Ø285 cutout so you never pull the (glued) baffle.**
+> Removing the baffle to reach the terminal destroyed it and forced a remake
+> (420 × 472, woofer front-mounted, M6 T-nuts pressed into the **rear** face
+> before glue-up).
+
 ### L-pad trim (do this during voicing, not the build)
 Full procedure is `dsp-tuning-guide.md` step 3 (level-match). In short:
 1. Measure horn-band vs woofer-band level at 1 m (pink noise, 2–8 kHz vs
