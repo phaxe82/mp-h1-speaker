@@ -1,6 +1,8 @@
 # MP-H1 — a high-sensitivity 2-way with a 3D-printed tractrix horn
 
-![The MP-H1 pair, fresh off the bench](images/mp-h1-pair-workshop.jpg)
+<p align="center">
+  <img src="images/mp-h1-hero.jpg" alt="The finished MP-H1 — 12″ pro woofer on a satin-black baffle, 3D-printed tractrix horn on top, on reclaimed-timber feet" width="480">
+</p>
 
 An OJAS / Devon Turnbull–inspired two-way: a 12″ pro woofer in a modest reflex
 box, and a 1.4″ compression driver on a **3D-printed round tractrix horn** that
